@@ -1,6 +1,6 @@
 # Market Pulse
 
-A Python-based financial analytics platform that runs a fully automated daily pipeline on the 100 most-active US stocks. Scrapes live price data, scores news sentiment, computes technical indicators, detects anomalies and signals, forecasts key metrics, and produces a self-contained interactive HTML dashboard — all from a single command.
+A Python-based financial analytics platform that runs a fully automated daily pipeline on the 100 most-active US stocks. Scrapes live price data, scores news sentiment, computes technical indicators, detects anomalies and signals, forecasts key metrics, and produces a self-contained interactive HTML dashboard, all from a single command.
 
 ---
 
@@ -38,9 +38,9 @@ main.py  (pipeline orchestrator)
 └── Stage 10 dashboard.py                     Plotly HTML dashboard build
 ```
 
-**Data layer** — all I/O goes through `data_loader.py`. Parquet-first with Excel as human-readable backup. In-process cache avoids repeated file reads within a single run.
+**Data layer:**  all I/O goes through `data_loader.py`. Parquet-first with Excel as human-readable backup. In-process cache avoids repeated file reads within a single run.
 
-**Config** — every threshold, path, and constant lives in `config.py` as frozen dataclasses. No magic numbers in module code.
+**Config:**  every threshold, path, and constant lives in `config.py` as frozen dataclasses. No magic numbers in module code.
 
 ---
 
@@ -53,13 +53,13 @@ pip install requests beautifulsoup4 pandas numpy scipy openpyxl pyarrow \
             plotly vaderSentiment yfinance colorama fredapi
 ```
 
-**Optional — FinBERT (recommended for better sentiment accuracy):**
+**Optional: FinBERT (recommended for better sentiment accuracy):**
 ```bash
 pip install transformers torch
 ```
 Without this, the platform falls back to VADER automatically.
 
-**Optional — Finnhub historical sentiment backfill:**
+**Optional: Finnhub historical sentiment backfill:**
 
 Create a `.env` file in the project root:
 ```
