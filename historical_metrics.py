@@ -79,16 +79,17 @@ def _daily_aggregates(df_h: pd.DataFrame) -> pd.DataFrame:
     """
     grp = df_h.groupby("Date")
 
+    # Build base aggregation indexed by Date so subsequent assignments align by index
     agg = grp["Change"].agg(
         n_gainers=lambda x: (x > 0).sum(),
         n_losers =lambda x: (x < 0).sum(),
         n_flat   =lambda x: (x == 0).sum(),
-    ).reset_index()
+    ).reset_index().set_index("Date")
 
-    agg["avg_pct"]     = grp["% Change"].mean().values
-    agg["volatility"]  = grp["% Change"].std().values
-    agg["skew_pct"]    = grp["% Change"].skew().values.round(4)
-    agg["kurt_pct"]    = grp["% Change"].apply(lambda x: x.kurt()).values.round(4)
+    agg["avg_pct"]    = grp["% Change"].mean()
+    agg["volatility"] = grp["% Change"].std()
+    agg["skew_pct"]   = grp["% Change"].skew().round(4)
+    agg["kurt_pct"]   = grp["% Change"].apply(lambda x: x.kurt()).round(4)
     agg["breadth_pct"] = (
         agg["n_gainers"] /
         (agg["n_gainers"] + agg["n_losers"] + agg["n_flat"])
@@ -101,17 +102,17 @@ def _daily_aggregates(df_h: pd.DataFrame) -> pd.DataFrame:
         np.where(agg["breadth_pct"] <= BREADTH.BEARISH_PCT, "Bearish", "Mixed"),
     )
 
-    # Best and worst stock each day
+    # Best and worst stock each day — explicit index alignment via set_axis
     idx_best  = grp["% Change"].idxmax()
     idx_worst = grp["% Change"].idxmin()
-    agg["best_stock"]  = df_h.loc[idx_best,  "Symbol"].values
-    agg["best_pct"]    = df_h.loc[idx_best,  "% Change"].values
-    agg["worst_stock"] = df_h.loc[idx_worst, "Symbol"].values
-    agg["worst_pct"]   = df_h.loc[idx_worst, "% Change"].values
+    agg["best_stock"]  = df_h.loc[idx_best.values,  "Symbol"].set_axis(idx_best.index)
+    agg["best_pct"]    = df_h.loc[idx_best.values,  "% Change"].set_axis(idx_best.index)
+    agg["worst_stock"] = df_h.loc[idx_worst.values, "Symbol"].set_axis(idx_worst.index)
+    agg["worst_pct"]   = df_h.loc[idx_worst.values, "% Change"].set_axis(idx_worst.index)
 
     agg["streak_sign"] = np.sign(agg["avg_pct"])
 
-    return agg.sort_values("Date").reset_index(drop=True)
+    return agg.reset_index().sort_values("Date").reset_index(drop=True)
 
 
 # ══════════════════════════════════════════════════════════════════════

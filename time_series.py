@@ -34,7 +34,7 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 
-from config import ROLLING
+from config import ROLLING, TECHNICAL
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ def detect_trend_change(
     series: pd.Series,
     short_window: int = None,
     long_window:  int = None,
-    min_gap:      float = 0.005,
+    min_gap:      float = None,
 ) -> pd.DataFrame:
     """
     Detect crossover points where the short MA crosses the long MA.
@@ -141,6 +141,7 @@ def detect_trend_change(
     """
     short_window = short_window or ROLLING.SHORT_WINDOW
     long_window  = long_window  or ROLLING.LONG_WINDOW
+    min_gap      = min_gap if min_gap is not None else TECHNICAL.TREND_GAP_THRESHOLD
 
     short_ma = series.rolling(short_window, min_periods=1).mean()
     long_ma  = series.rolling(long_window,  min_periods=1).mean()

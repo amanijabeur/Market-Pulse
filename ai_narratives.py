@@ -198,7 +198,12 @@ def generate_volatility_commentary(
             "Insufficient history to contextualise against a baseline."
         )
 
-    denom   = max(baseline_vol * 0.3, 1e-6)
+    if not hist_df.empty and "volatility" in hist_df.columns and len(hist_df) >= 5:
+        vol_hist = hist_df["volatility"].dropna().iloc[:-1]
+        sigma = float(vol_hist.std()) if len(vol_hist) >= 4 else 0.0
+        denom = max(sigma, 1e-6)
+    else:
+        denom = max(baseline_vol * 0.3, 1e-6)
     z_score = (latest_vol - baseline_vol) / denom
     vol_str = _vol_phrase(z_score)
 

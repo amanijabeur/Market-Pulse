@@ -378,6 +378,12 @@ class _Anomaly:
     SEVERITY_CRITICAL_Z:  float = 3.5  # abs(z) >= this → Critical
     SEVERITY_HIGH_Z:      float = 3.0  # abs(z) >= this → High (else Moderate)
 
+    # Minimum baseline observations required before firing a z-score anomaly.
+    # With fewer points the standard deviation is unreliable (t-dist df too small).
+    # Per-symbol detectors (price_gap) use the same threshold; yfinance history
+    # typically provides 400-500 days so this only affects brand-new installs.
+    MIN_BASELINE_DAYS:    int   = 20
+
 
 ANOMALY = _Anomaly()
 

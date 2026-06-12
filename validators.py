@@ -352,8 +352,17 @@ def validate_anomaly_data(df: pd.DataFrame) -> ValidationResult:
     z = pd.to_numeric(df["z_score"], errors="coerce")
     if z.isna().any():
         result.add_warning("Anomaly cache contains NaN/non-numeric z_score values.")
-    if (z.abs() > 20).any():
-        result.add_warning("Anomaly z_score contains extreme values above 20; inspect cache/source data.")
+    # cluster_spike z_score is a participation fraction [0, 1]; other detectors
+    # use real z-scores where > 10 indicates a data error, not a real event.
+    if "anomaly_type" in df.columns:
+        non_cluster = df["anomaly_type"] != "cluster_spike"
+        if (z[non_cluster].abs() > 10).any():
+            result.add_warning("Anomaly z_score contains extreme values above 10; inspect cache/source data.")
+        if (z[~non_cluster].abs() > 1.0).any():
+            result.add_warning("cluster_spike z_score exceeds 1.0; participation fraction is corrupted.")
+    else:
+        if (z.abs() > 10).any():
+            result.add_warning("Anomaly z_score contains extreme values above 10; inspect cache/source data.")
     result.log_summary("anomaly_data")
     return result
 

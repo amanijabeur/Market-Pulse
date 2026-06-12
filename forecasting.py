@@ -80,9 +80,10 @@ def _sma_forecast(
     point  = float(roll_mean.iloc[-1])
     spread = float(roll_std.iloc[-1])
 
+    steps     = np.arange(1, horizon + 1)
     forecasts = np.full(horizon, point)
-    lower     = forecasts - spread
-    upper     = forecasts + spread
+    lower     = forecasts - spread * np.sqrt(steps)
+    upper     = forecasts + spread * np.sqrt(steps)
     return forecasts, lower, upper
 
 
@@ -323,10 +324,6 @@ def forecast_sentiment_trend(
     df["Date"] = pd.to_datetime(df["Date"])
     df = df.sort_values("Date").reset_index(drop=True)
 
-    if "rolling_7d" in df.columns:
-        series = df["rolling_7d"].copy()
-    else:
-        series = df["avg_score"].rolling(ROLLING.SHORT_WINDOW, min_periods=1).mean()
-
+    series = df["avg_score"].copy()
     series.index = df["Date"]
     return forecast_series(series, horizon=horizon, method=method)

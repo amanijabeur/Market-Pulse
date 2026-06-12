@@ -86,7 +86,7 @@ _EMPTY_PHASE2_COLUMNS = {
     ],
     "forecast": ["Date", "metric", "forecast", "lower_bound", "upper_bound", "method"],
     "signal": ["Date", "Symbol", "signal_type", "direction", "strength", "score", "reason"],
-    "anomaly": ["Date", "anomaly_type", "severity", "z_score", "value", "reason"],
+    "anomaly": ["Date", "Symbol", "anomaly_type", "severity", "z_score", "value", "reason"],
 }
 
 _PHASE2_NUMERIC_COLS = {
@@ -391,8 +391,14 @@ def save_price_data(df: pd.DataFrame) -> None:
     df = _dedup_price(df)
     df = df.sort_values("Date").reset_index(drop=True)
 
-    # Excel — human-readable source of truth
-    df.to_excel(EXCEL_FILE, index=False, engine="openpyxl")
+    # Excel — write only Sheet1, preserving any other sheets (e.g. sentiment_history)
+    if os.path.exists(EXCEL_FILE):
+        with pd.ExcelWriter(
+            EXCEL_FILE, engine="openpyxl", mode="a", if_sheet_exists="replace"
+        ) as writer:
+            df.to_excel(writer, sheet_name=PATHS.PRICE_SHEET, index=False)
+    else:
+        df.to_excel(EXCEL_FILE, sheet_name=PATHS.PRICE_SHEET, index=False, engine="openpyxl")
 
     # Parquet — fast-read mirror
     df.to_parquet(PRICE_PARQUET, index=False, engine="pyarrow")

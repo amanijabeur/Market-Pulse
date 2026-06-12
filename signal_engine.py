@@ -250,7 +250,7 @@ def detect_sentiment_divergence(df_latest: pd.DataFrame, today: pd.Timestamp = N
         sent = float(sent)
 
         # Bearish divergence: price up but sentiment negative
-        if pct > 0.5 and sent < -_SENT_DIVERGE_MIN:
+        if pct > abs(_SENT_DIVERGE_PRICE) and sent < -_SENT_DIVERGE_MIN:
             direction = "Bearish"
             reason    = (
                 f"{sym}: price up {pct:+.2f}% but sentiment {sent:+.4f} — "
@@ -309,7 +309,10 @@ def detect_unusual_movers(
     for _, row in df_latest.iterrows():
         sym    = row["Symbol"]
         pct    = row["% Change"]
-        hist   = df_full[df_full["Symbol"] == sym]["% Change"].dropna()
+        hist   = df_full[
+            (df_full["Symbol"] == sym) &
+            (pd.to_datetime(df_full["Date"]) < today)
+        ]["% Change"].dropna()
 
         if len(hist) < TECHNICAL_MIN_HISTORY + 2:
             continue
@@ -380,7 +383,10 @@ def compute_risk_scores(
         sym   = row["Symbol"]
         pct   = row["% Change"]
         price = row["Price"]
-        sym_df = df_full[df_full["Symbol"] == sym]
+        sym_df = df_full[
+            (df_full["Symbol"] == sym) &
+            (pd.to_datetime(df_full["Date"]) < today)
+        ]
 
         vol_ratio = abs(pct) / max(baseline_vol, 0.001)
 
@@ -458,7 +464,10 @@ def compute_opportunity_ranking(
 
         rel_mom = pct - mkt_avg
 
-        sym_hist = df_full[df_full["Symbol"] == sym]["% Change"].dropna()
+        sym_hist = df_full[
+            (df_full["Symbol"] == sym) &
+            (pd.to_datetime(df_full["Date"]) < today)
+        ]["% Change"].dropna()
         z = (
             (pct - float(sym_hist.mean())) / max(float(sym_hist.std()), 0.001)
             if len(sym_hist) >= 3 else 0.0

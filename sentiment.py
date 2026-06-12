@@ -75,10 +75,6 @@ from config import ROLLING, SENTIMENT as _SENTIMENT_CFG
 
 # ── Module logger ──────────────────────────────────────────────────────
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s [sentiment] %(message)s",
-)
 
 # ── Sentiment model — FinBERT preferred, VADER fallback ──────────────
 # FinBERT (ProsusAI/finbert) is trained on 10-K filings, earnings calls,

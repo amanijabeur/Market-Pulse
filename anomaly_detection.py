@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 # Canonical anomaly output schema — shared with data_loader and validators
 ANOMALY_SCHEMA: list[str] = [
-    "Date", "anomaly_type", "severity", "z_score", "value", "reason"
+    "Date", "Symbol", "anomaly_type", "severity", "z_score", "value", "reason"
 ]
 
 # Module-level threshold aliases (all sourced from config)
@@ -57,6 +57,7 @@ _BREADTH_EXTREME_Z  = ANOMALY.BREADTH_EXTREME_Z
 _CLUSTER_MIN_PCT    = ANOMALY.CLUSTER_MIN_PCT
 _CLUSTER_MIN_MOVE   = ANOMALY.CLUSTER_MIN_MOVE
 _SENT_VOL_CORR_THR  = ANOMALY.SENT_VOL_CORR_THRESHOLD
+_MIN_BASELINE       = ANOMALY.MIN_BASELINE_DAYS
 
 
 def _empty_anomaly_df() -> pd.DataFrame:
@@ -97,7 +98,7 @@ def detect_price_gap_anomalies(
 
     Returns
     -------
-    pd.DataFrame with ANOMALY_SCHEMA columns plus Symbol.
+    pd.DataFrame with ANOMALY_SCHEMA columns.
     """
     today = pd.to_datetime(df_latest["Date"].max())
     rows  = []
@@ -105,9 +106,12 @@ def detect_price_gap_anomalies(
     for _, row in df_latest.iterrows():
         sym  = row["Symbol"]
         pct  = row["% Change"]
-        hist = df_full[df_full["Symbol"] == sym]["% Change"].dropna()
+        hist = df_full[
+            (df_full["Symbol"] == sym) &
+            (pd.to_datetime(df_full["Date"]) < today)
+        ]["% Change"].dropna()
 
-        if len(hist) < 5:
+        if len(hist) < _MIN_BASELINE:
             continue
 
         mu    = float(hist.mean())
@@ -158,7 +162,7 @@ def detect_volatility_regime_anomaly(hist_df: pd.DataFrame) -> pd.DataFrame:
     -------
     pd.DataFrame with one row if an anomaly exists, empty otherwise.
     """
-    if hist_df.empty or "volatility" not in hist_df.columns or len(hist_df) < 5:
+    if hist_df.empty or "volatility" not in hist_df.columns or len(hist_df) < _MIN_BASELINE:
         return _empty_anomaly_df()
 
     df     = hist_df.sort_values("Date")
@@ -181,6 +185,7 @@ def detect_volatility_regime_anomaly(hist_df: pd.DataFrame) -> pd.DataFrame:
     direction = "above" if z > 0 else "below"
     return pd.DataFrame([{
         "Date":         today,
+        "Symbol":       pd.NA,
         "anomaly_type": "vol_regime",
         "severity":     _severity(abs(z)),
         "z_score":      round(float(z), 4),
@@ -208,7 +213,7 @@ def detect_breadth_extremes(hist_df: pd.DataFrame) -> pd.DataFrame:
     -------
     pd.DataFrame with one row if an anomaly exists, empty otherwise.
     """
-    if hist_df.empty or "breadth_pct" not in hist_df.columns or len(hist_df) < 5:
+    if hist_df.empty or "breadth_pct" not in hist_df.columns or len(hist_df) < _MIN_BASELINE:
         return _empty_anomaly_df()
 
     df      = hist_df.sort_values("Date")
@@ -230,6 +235,7 @@ def detect_breadth_extremes(hist_df: pd.DataFrame) -> pd.DataFrame:
     direction = "overbought" if z > 0 else "oversold"
     return pd.DataFrame([{
         "Date":         today,
+        "Symbol":       pd.NA,
         "anomaly_type": "breadth_extreme",
         "severity":     _severity(abs(z)),
         "z_score":      round(float(z), 4),
@@ -278,13 +284,14 @@ def detect_cluster_spike(df_latest: pd.DataFrame) -> pd.DataFrame:
         avg_move = float(group["% Change"].mean())
         rows.append({
             "Date":         today,
+            "Symbol":       pd.NA,
             "anomaly_type": "cluster_spike",
             "severity":     (
                 "Critical" if frac >= 0.60 else
                 "High"     if frac >= 0.45 else
                 "Moderate"
             ),
-            "z_score":      round(frac * 10, 4),   # participation as z-proxy
+            "z_score":      round(frac, 4),   # participation fraction [0, 1]
             "value":        round(avg_move, 4),
             "reason": (
                 f"{len(group)} of {n} stocks ({frac:.0%}) showed strong {label} moves "
@@ -358,6 +365,7 @@ def detect_sentiment_volatility_divergence(
     severity = "High" if latest_corr < -0.75 else "Moderate"
     return pd.DataFrame([{
         "Date":         today,
+        "Symbol":       pd.NA,
         "anomaly_type": "sent_vol_divergence",
         "severity":     severity,
         "z_score":      round(float(latest_corr), 4),

@@ -30,7 +30,6 @@ import data_loader
 from config import SCRAPER
 
 # -- LOGGING ------------------------------------------------------------
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 TARGET_URL = SCRAPER.TARGET_URL
