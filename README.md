@@ -6,17 +6,17 @@ A Python-based financial analytics platform that runs a fully automated daily pi
 
 ## Features
 
-- **Live data scraping** — Yahoo Finance most-active list with US Eastern date handling
-- **NLP sentiment scoring** — FinBERT (ProsusAI/finbert) primary, VADER fallback; per-symbol headline analysis
-- **Historical baseline extension** — merges 2 years of OHLCV data with daily scrapes so analytics have meaningful baselines from day one
-- **Technical indicators** — SMA, EMA, RSI, MACD, Bollinger Bands, ATR, momentum, rolling z-scores
-- **Signal engine** — momentum breakouts, volatility spikes, sentiment divergence, unusual movers, risk scores, opportunity rankings
-- **Anomaly detection** — price gap anomalies, volatility regime shifts, breadth extremes, cluster spikes, sentiment-volatility divergence
-- **Forecasting** — OLS linear, SMA, and EMA projections with widening confidence intervals
-- **AI narratives** — deterministic session summaries, volatility commentary, sentiment briefings
-- **Interactive dashboard** — Plotly-based HTML with Technical, Forecast, Signals, Anomaly, and AI Briefing tabs
-- **Automated scheduling** — Windows Task Scheduler (`run_daily.bat`) and Linux cron (`run_daily.sh`)
-- **Self-healing pipeline** — auto-backfills missed trading days and sparse sentiment history on every run
+- **Live data scraping:** Yahoo Finance most-active list with US Eastern date handling
+- **NLP sentiment scoring:** FinBERT (ProsusAI/finbert) primary, VADER fallback; per-symbol headline analysis
+- **Historical baseline extension:** merges 2 years of OHLCV data with daily scrapes so analytics have meaningful baselines from day one
+- **Technical indicators:** SMA, EMA, RSI, MACD, Bollinger Bands, ATR, momentum, rolling z-scores
+- **Signal engine:** momentum breakouts, volatility spikes, sentiment divergence, unusual movers, risk scores, opportunity rankings
+- **Anomaly detection:** price gap anomalies, volatility regime shifts, breadth extremes, cluster spikes, sentiment-volatility divergence
+- **Forecasting:** OLS linear, SMA, and EMA projections with widening confidence intervals
+- **AI narratives:** deterministic session summaries, volatility commentary, sentiment briefings
+- **Interactive dashboard:** Plotly-based HTML with Technical, Forecast, Signals, Anomaly, and AI Briefing tabs
+- **Automated scheduling:** Windows Task Scheduler (`run_daily.bat`) and Linux cron (`run_daily.sh`)
+- **Self-healing pipeline:** auto-backfills missed trading days and sparse sentiment history on every run
 
 ---
 
