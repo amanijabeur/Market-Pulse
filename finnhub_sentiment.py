@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 
 FINNHUB_BASE  = FINNHUB_CFG.BASE_URL
 _CALL_DELAY   = FINNHUB_CFG.CALL_DELAY_SEC
-_SENT_COLUMNS = SENTIMENT.COLUMNS
+_SENT_COLUMNS = list(SENTIMENT.COLUMNS)
 
 
 # ══════════════════════════════════════════════════════════════════════

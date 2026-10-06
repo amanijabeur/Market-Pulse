@@ -48,6 +48,7 @@ import webbrowser
 from datetime import datetime
 from typing import Callable
 
+import numpy as np
 import pandas as pd
 
 # -- Config is the first import -- everything else may depend on it -----
@@ -106,6 +107,9 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("main")
+
+# urllib3 DEBUG logs full request URLs, which include API tokens
+logging.getLogger("urllib3").setLevel(logging.INFO)
 
 
 # ======================================================================
@@ -478,7 +482,7 @@ def stage_ai_narratives() -> None:
     forecasts["sentiment"] = forecasting.forecast_sentiment_trend(daily_sent)
 
     sent_summary = {
-        "mean_score": float(df_latest.get("Sentiment_Score", pd.Series(dtype=float)).mean() or 0),
+        "mean_score": float(np.nan_to_num(df_latest.get("Sentiment_Score", pd.Series(dtype=float)).mean())),
         "pct_bullish": float((df_latest.get("Sentiment_Label", pd.Series(dtype=str)) == "Bullish").mean() * 100) if "Sentiment_Label" in df_latest else 0,
         "pct_bearish": float((df_latest.get("Sentiment_Label", pd.Series(dtype=str)) == "Bearish").mean() * 100) if "Sentiment_Label" in df_latest else 0,
     }
