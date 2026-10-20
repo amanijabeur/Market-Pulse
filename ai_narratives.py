@@ -233,7 +233,8 @@ def generate_sentiment_commentary(
     Fix (v2): explicit .get() with float defaults on all summary keys
     to prevent KeyError when scraper has not yet run for today.
     """
-    if not sent_summary or sent_summary.get("n_total", 0) == 0:
+    n_scored = sent_summary.get("n_total", 0) - sent_summary.get("n_no_data", 0) if sent_summary else 0
+    if n_scored <= 0:
         return "Sentiment data is not available for this session."
 
     mean_score  = float(sent_summary.get("mean_score",  0.0))
@@ -254,7 +255,7 @@ def generate_sentiment_commentary(
         else:               trend_str = " Sentiment is broadly unchanged from the prior session."
 
     return (
-        f"News sentiment across the 100-stock universe reflects {tone}. "
+        f"News sentiment across the {n_scored} stocks with news coverage reflects {tone}. "
         f"{n_bullish} stocks carry a bullish news signal ({pct_bullish:.1f}%) "
         f"against {n_bearish} with a bearish signal ({pct_bearish:.1f}%). "
         f"The mean sentiment score stands at {mean_score:+.4f}, "
@@ -387,27 +388,41 @@ def generate_forecast_commentary(forecast_dict: dict) -> str:
     if not forecast_dict:
         return "Forecast data unavailable."
 
+    def _next(key: str):
+        """(forecast, lower, upper) for the next session, or None."""
+        df = forecast_dict.get(key)
+        if df is None or df.empty or "forecast" not in df.columns:
+            return None
+        row = df.iloc[0]
+        return float(row["forecast"]), float(row["lower_bound"]), float(row["upper_bound"])
+
     parts = []
 
-    avg_fcast = forecast_dict.get("avg_pct")
-    if avg_fcast is not None and not avg_fcast.empty and "forecast" in avg_fcast.columns:
-        f1 = float(avg_fcast["forecast"].iloc[0])
-        fn = float(avg_fcast["forecast"].iloc[-1])
-        direction = "positive" if f1 >= 0 else "negative"
+    avg = _next("avg_pct")
+    if avg is not None:
+        f1, lo, hi = avg
+        if lo > 0 or hi < 0:
+            lean = f"a {'positive' if f1 > 0 else 'negative'} session is statistically favoured"
+        else:
+            lean = "the range spans both directions, so no directional call is implied"
         parts.append(
-            f"The {len(avg_fcast)}-day average % change projection end-point is {fn:+.2f}% "
-            f"with a near-term bias toward {direction} territory ({f1:+.2f}% next session)."
+            f"Next-session average % change is projected at {f1:+.2f}% "
+            f"(95% range {lo:+.2f}% to {hi:+.2f}%); {lean}."
         )
 
-    vol_fcast = forecast_dict.get("volatility")
-    if vol_fcast is not None and not vol_fcast.empty and "forecast" in vol_fcast.columns:
-        fv = float(vol_fcast["forecast"].iloc[0])
-        parts.append(f"Projected volatility for the next session: {fv:.4f}%.")
+    vol = _next("volatility")
+    if vol is not None:
+        parts.append(
+            f"Projected volatility for the next session: {vol[0]:.2f}% "
+            f"(range {vol[1]:.2f}%–{vol[2]:.2f}%)."
+        )
 
-    breadth_fcast = forecast_dict.get("breadth_pct")
-    if breadth_fcast is not None and not breadth_fcast.empty and "forecast" in breadth_fcast.columns:
-        fb = float(breadth_fcast["forecast"].iloc[0])
-        parts.append(f"Breadth forecast for the next session: {fb:.1f}% advancing.")
+    breadth = _next("breadth_pct")
+    if breadth is not None:
+        parts.append(
+            f"Breadth forecast: {breadth[0]:.1f}% advancing "
+            f"(range {breadth[1]:.0f}%–{breadth[2]:.0f}%)."
+        )
 
     if not parts:
         return (
@@ -417,8 +432,8 @@ def generate_forecast_commentary(forecast_dict: dict) -> str:
 
     return (
         " ".join(parts) +
-        " Note: projections are statistical extrapolations based on recent trends "
-        "and carry inherent uncertainty."
+        " Note: daily market moves are largely unpredictable; these are "
+        "statistical baselines with backtested 95% ranges, not trading signals."
     )
 
 

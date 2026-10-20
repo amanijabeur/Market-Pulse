@@ -48,7 +48,6 @@ import webbrowser
 from datetime import datetime
 from typing import Callable
 
-import numpy as np
 import pandas as pd
 
 # -- Config is the first import -- everything else may depend on it -----
@@ -481,11 +480,12 @@ def stage_ai_narratives() -> None:
     )
     forecasts["sentiment"] = forecasting.forecast_sentiment_trend(daily_sent)
 
-    sent_summary = {
-        "mean_score": float(np.nan_to_num(df_latest.get("Sentiment_Score", pd.Series(dtype=float)).mean())),
-        "pct_bullish": float((df_latest.get("Sentiment_Label", pd.Series(dtype=str)) == "Bullish").mean() * 100) if "Sentiment_Label" in df_latest else 0,
-        "pct_bearish": float((df_latest.get("Sentiment_Label", pd.Series(dtype=str)) == "Bearish").mean() * 100) if "Sentiment_Label" in df_latest else 0,
-    }
+    from sentiment import breadth_summary
+    sent_summary = (
+        breadth_summary(df_latest)
+        if {"Sentiment_Label", "Sentiment_Score"} <= set(df_latest.columns)
+        else {}
+    )
     # Use extended_hist for the briefing so rolling averages and volatility
     # baselines are drawn from the full 500-day history, not just scraped days.
     ext_latest_vol  = float(extended_hist["volatility"].iloc[-1]) if not extended_hist.empty else hist["latest_vol"]

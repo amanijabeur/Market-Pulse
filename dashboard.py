@@ -265,9 +265,13 @@ def build():
     sent_history = data_loader.load_sentiment_history()
 
     # ── Decide whether to fetch or reuse ─────────────────────────────────
-    if today_str in sent_history["Date"].values:
+    # Restrict to today's universe: backfills store sentiment for every
+    # symbol ever tracked, which would skew today's breadth figures
+    sent_df = sent_history[
+        (sent_history["Date"] == today_str) & sent_history["Symbol"].isin(df["Symbol"])
+    ].copy().reset_index(drop=True)
+    if not sent_df.empty:
         logger.info("Sentiment already stored for %s — loading from cache.", today_str)
-        sent_df = sent_history[sent_history["Date"] == today_str].copy().reset_index(drop=True)
     else:
         logger.info("Running sentiment analysis for %d symbols ...", len(df["Symbol"].tolist()))
         sent_df = sentiment_module.run(df["Symbol"].tolist(), max_headlines=10)
@@ -1792,8 +1796,7 @@ def build():
     forecast_dict = forecast_dict_from_cache(forecast_df)
     signals_dict = signals_dict_from_cache(signal_df)
     anomalies_dict = anomalies_dict_from_cache(anomaly_df)
-    sent_summary = {"mean_score": mean_sent, "pct_bullish": pct_bull, "pct_bearish": pct_bear}
-    briefing = ai_narratives.generate_daily_briefing(
+    briefing =ai_narratives.generate_daily_briefing(
         df, hist_df, sent_summary, daily_sent, signals_dict, anomalies_dict, forecast_dict,
         N_GAIN, N_LOSS, N_FLAT, AVG_CHG, TOP_SYM, TOP_PCT, BOT_SYM, BOT_PCT,
         latest_vol, baseline_vol,

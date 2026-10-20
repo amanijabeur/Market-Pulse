@@ -301,8 +301,23 @@ class _Forecasting:
     # Default forecast horizon in business days
     DEFAULT_HORIZON:       int   = 5
 
-    # Default forecast method
-    DEFAULT_METHOD:        str   = "linear"   # "sma" | "ema" | "linear"
+    # Default forecast method. "auto" picks per metric from METRIC_METHODS;
+    # any other value forces that method for every metric.
+    DEFAULT_METHOD:        str   = "auto"   # "auto" | "mean" | "har" | "sma" | "ema" | "linear"
+
+    # Per-metric methods used by "auto", chosen by a 250-origin rolling
+    # backtest (forecasting.backtest). Daily avg % change, breadth and
+    # sentiment show ~zero autocorrelation, so a long-run mean beats trend
+    # extrapolation; volatility is persistent in log space, so HAR wins.
+    METRIC_METHODS:        tuple = (
+        ("avg_pct",     "mean"),
+        ("volatility",  "har"),
+        ("breadth_pct", "mean"),
+        ("sentiment",   "mean"),
+    )
+
+    # Lookback for the long-run mean and the HAR fit (business days)
+    MEAN_WINDOW:           int   = 250
 
     # Minimum observations for a meaningful linear forecast
     MIN_LINEAR_OBS:        int   = 5
